@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>The Power Hour</title>
+  <meta name="description" content="Power rankings, waiver wire and data-nerd stats for a Sleeper fantasy football league.">
+  <meta name="theme-color" content="#81D4FA">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <!-- everything the first screen needs starts downloading here, in parallel: the stylesheet, both typefaces (served
+       from this site), every script module (without these, the browser only finds lib/ after app.js arrives), and the
+       connection to Sleeper's picture CDN for the team avatars -->
+  <link rel="preload" href="assets/fonts/big-shoulders-display-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/albert-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="modulepreload" href="app.js">
+  <link rel="modulepreload" href="lib/newsclock.js">
+  <link rel="modulepreload" href="lib/engine.js">
+  <link rel="modulepreload" href="lib/matchup.js">
+  <link rel="modulepreload" href="lib/stories.js">
+  <link rel="modulepreload" href="lib/charts.js">
+  <link rel="modulepreload" href="lib/overrides.js">
+  <link rel="modulepreload" href="lib/trades.js">
+  <link rel="modulepreload" href="lib/members.js">
+  <link rel="modulepreload" href="lib/bullseye.js">
+  <link rel="modulepreload" href="lib/nightdesk.js">
+  <link rel="preconnect" href="https://sleepercdn.com">
+  <!-- the league data: asked for as soon as the clock module is in, while the rest of the code is still on its way.
+       app.js picks these requests up (window.__early) instead of starting its own; the demo never makes them. -->
+  <script type="module" async data-early>
+    import { morningKey, leagueKey } from './lib/newsclock.js';
+    if (!window.__early && !window.__DEMO__ && !new URLSearchParams(location.search).has('demo')) {
+      const get = (url) => { const res = fetch(url); res.catch(() => {}); return { url, res }; };
+      window.__early = { league: get(`/api/league?d=${leagueKey()}`), ros: get(`/api/ros?d=${morningKey()}`) };
+    }
+  </script>
+</head>
+<body>
+  <div class="sky" aria-hidden="true"><span class="cloud c1"></span><span class="cloud c2"></span><span class="cloud c3"></span></div>
+
+  <header class="topbar glass">
+    <a class="brand" href="#rankings" aria-label="The Power Hour home">
+      <img class="brand-logo" src="assets/logo-header.webp" alt="" width="52" height="48" fetchpriority="high">
+      <span class="brand-text"><strong>The Power Hour</strong><small id="league-name">Loading league…</small></span>
+    </a>
+    <nav class="tabs" aria-label="Sections">
+      <span class="tab-ink" aria-hidden="true"></span>
+      <a href="#live" data-view="live" hidden>Live</a>
+      <a href="#rankings" data-view="rankings"><span class="tl">Rankings</span><span class="ts">Power</span></a>
+      <a href="#wire" data-view="wire">Wire</a>
+      <a href="#matchups" data-view="matchups"><span class="tl">This week</span><span class="ts">Games</span></a>
+      <a href="#trades" data-view="trades"><span class="tl">Trade lab</span><span class="ts">Trades</span></a>
+      <a href="#lab" data-view="lab"><span class="tl">Nerd lab</span><span class="ts">Lab</span></a>
+    </nav>
+    <label class="team-pick">
+      <span class="sr-only">Highlight your team</span>
+      <img class="me-face" id="my-face" alt="" hidden>
+      <select id="my-team"><option value="">Your team</option></select>
+    </label>
+  </header>
+
+  <main id="app" tabindex="-1">
+    <!-- the kicker loader: shown only if loading takes longer than 300 ms (app.js, startLoader). The clip isn't
+         downloaded until then, so a fast load never spends bandwidth on it; the poster is the kick's first frame. -->
+    <section class="loading" id="loading" aria-busy="true">
+      <div class="kick-card glass rim">
+        <video class="kick" muted loop playsinline preload="none" poster="assets/kicker-poster.webp" aria-hidden="true">
+          <source src="assets/kicker.webm" type="video/webm">
+          <source src="assets/kicker.mp4" type="video/mp4">
+        </video>
+        <img class="kick kick-still" src="assets/kicker-poster.webp" alt="" aria-hidden="true">
+        <p role="status">Pulling your league from Sleeper…</p>
+      </div>
+    </section>
+    <script>
+      // The loader clock starts here, not in app.js: on a slow connection app.js can take seconds to arrive, and the
+      // kicker should still appear 300 ms in. The clip starts downloading and playing only then. Reduced motion drops
+      // the video right away (the still frame shows instead).
+      (function () {
+        var l = document.getElementById('loading'), v = l && l.querySelector('video');
+        if (v && matchMedia('(prefers-reduced-motion: reduce)').matches) { v.remove(); v = null; }
+        window.__loader = { timer: setTimeout(function () {
+          if (!l) return;
+          window.__loader.shownAt = performance.now();
+          if (v) { try { v.currentTime = 0; var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} }
+          l.classList.add('show');
+        }, 300) };
+      })();
+    </script>
+  </main>
+
+  <footer class="footer">
+    <img class="footer-logo" src="assets/logo-footer.webp" alt="The Power Hour, fantasy football power rankings" width="175" height="160" loading="lazy" decoding="async" fetchpriority="low">
+    <p id="footer-meta"></p>
+    <p class="masthead" id="masthead" hidden></p>
+    <p class="masthead" id="reigning" hidden></p>
+    <p class="fine">League data from the Sleeper API. Rest-of-season rankings from FantasyPros, DraftSharks and LeagueLogs, blended into one consensus. Not affiliated with any of them.</p>
+  </footer>
+
+  <div id="tip" class="tip" role="tooltip" hidden></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
