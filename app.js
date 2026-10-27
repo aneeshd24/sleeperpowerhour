@@ -1,6 +1,6 @@
 import { computeLeague, PARTS } from './lib/engine.js';
 import { bumpChart, scatter, radar, weeklyBars, divergingBars, heatTable, faceDot, TEAM_COLORS } from './lib/charts.js';
-import { buildStories, keyMatchup, matchupQuips } from './lib/stories.js';
+import { buildStories, keyMatchup, matchupQuips, STORY_COUNT } from './lib/stories.js';
 import { applyOverrides } from './lib/overrides.js';
 import { tradeIdeas } from './lib/trades.js';
 import { breakdown, shortName, fits } from './lib/matchup.js';
@@ -170,10 +170,10 @@ function headlines() {
   // once the week is final the headlines come down; the week after, the shakeup leads
   if (DATA.finalCall) return null;
   if (!DATA.liveMode && shakeupOn()) return shakeupStories();
-  let stories = buildStories(DATA, { now: DATA.now, dateKey: chicagoDate(), editor: EDITOR });
+  const people = Object.fromEntries(DATA.teams.map((t) => [t.rid, firstName(t)]));
+  let stories = buildStories(DATA, { now: DATA.now, dateKey: chicagoDate(), editor: EDITOR, people });
   // after Sunday night football the night desk takes over the headlines
   if (nightDesk() && DATA.live) {
-    const people = Object.fromEntries(DATA.teams.map((t) => [t.rid, firstName(t)]));
     const ed = nightEdition(DATA, { dateKey: chicagoDate(), editor: EDITOR, people });
     if (ed?.length) stories = { lead: ed[0], more: ed.slice(1), night: true };
   }
@@ -994,9 +994,9 @@ function clipPrint(st) {
     </figure>`;
 }
 
-// three headlines in one square card (four on night-edition nights): swipe, arrows or dots; the active dot's fill is the
-// auto-advance timer
-const CAROUSEL_SIZE = 3;
+// five headlines in one square card (half last week, half this week, from buildStories; the night edition brings its
+// own): swipe, arrows or dots; the active dot's fill is the auto-advance timer
+const CAROUSEL_SIZE = STORY_COUNT;
 function leadStory() {
   const s = DATA.stories;
   if (!s?.lead) return '';
