@@ -204,18 +204,20 @@ const posOf = (id) => DATA.helpers.posOf(id);
 const posTag = (id) => { const p = posOf(id); return p ? `<span class="pos ${p}">${p}</span>` : ''; };
 const member = (t) => (t && MEMBERS[t.ownerId]) || null;
 // the person, not the Sleeper handle, wherever we can
-const faceSrc = (t) => (member(t) ? photoUrl(member(t).photo) : null);
+const faceSrc = (t) => (member(t)?.photo ? photoUrl(member(t).photo) : null);
 const firstName = (t) => member(t)?.first || t.owner;
-// the team picture from Sleeper; manager headshots are reserved for headshot() below
+// the team picture from Sleeper (the uploaded team photo, else the manager's account avatar); manager headshots are
+// reserved for headshot() below
 function avatar(t, cls = 'avatar') {
   const initials = esc(t.name.replace(/[^A-Za-z0-9 ]/g, '').split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?');
-  if (!t.avatar) return `<span class="${cls} ph" aria-hidden="true">${initials}</span>`;
-  return `<img class="${cls}" src="https://sleepercdn.com/avatars/thumbs/${esc(t.avatar)}" alt="" loading="lazy" data-initials="${initials}">`;
+  const src = t.teamPhoto || (t.avatar && `https://sleepercdn.com/avatars/thumbs/${t.avatar}`);
+  if (!src) return `<span class="${cls} ph" aria-hidden="true">${initials}</span>`;
+  return `<img class="${cls}" src="${esc(src)}" alt="" loading="lazy" data-initials="${initials}">`;
 }
 // a bigger, named photo for the places a face is the point (headlines, manager cards, the face-off)
 const headshot = (t, cls) => {
   const m = member(t);
-  return m ? `<img class="${cls}" src="${photoUrl(m.photo)}" alt="${esc(m.first)}" decoding="async" data-initials="${esc(m.first[0])}">` : avatar(t, cls);
+  return m?.photo ? `<img class="${cls}" src="${photoUrl(m.photo)}" alt="${esc(m.first)}" decoding="async" data-initials="${esc(m.first[0])}">` : avatar(t, cls);
 };
 // a picture that fails to load (a Sleeper avatar gone missing) turns into its initials. Load errors don't bubble, so one
 // capturing listener on the document covers every picture any render ever adds.
